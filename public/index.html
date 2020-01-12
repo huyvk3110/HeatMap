@@ -98,6 +98,7 @@
 
             //Legend
             const legend = svg.append('g')
+                .attr('id','legend')
                 .attr('transform', `translate(${padding},${height - padding})`)
             //-Rect
             legend.selectAll('rect')
