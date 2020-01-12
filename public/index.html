@@ -45,7 +45,11 @@
                 { temp: 12.8, color: 'rgb(215, 48, 39)' },
                 { temp: undefined, color: 'rgb(165, 0, 38)' },
             ]
-
+            //Tooltip
+            const tooltip = d3.select('body')
+                .append('div')
+                .attr('id', 'tooltip')
+                .style('opacity', 0)
             //SVG
             const svg = d3.select('#content')
                 .append('svg')
@@ -65,6 +69,19 @@
                 .attr('x', o => xScale(o.year) + padding)
                 .attr('y', o => yScale(o.month) + 10)
                 .style('fill', o => config.find(oo => o.maxTemp < oo.temp) ? config.find(oo => o.maxTemp < oo.temp).color : 'rgb(165, 0, 38)')
+                .on('mouseover', o => {
+                    tooltip.transition()
+                        .duration(200)
+                        .style('opacity',1)
+                    tooltip.html(`${o.year} - ${d3.timeFormat('%B')(new Date(o.year,o.month))}<br/>${o.maxTemp}°C<br/>${o.minTemp}°C`)
+                        .style('left',`${d3.event.pageX}px`)
+                        .style('top',`${d3.event.pageY - 80}px`)
+                })
+                .on('mouseout', o => {
+                    tooltip.transition()
+                        .duration(200)
+                        .style('opacity',0)
+                })
             //Axis X
             const xAxis = d3.axisBottom(xScale);
             svg.append('g')
