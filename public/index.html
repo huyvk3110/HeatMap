@@ -1,13 +1,108 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/5.15.0/d3.js" integrity="sha256-BANs9QteeZKuqwQcdddFZlWLLyUCIke5Nn80f8B5G3g=" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/5.15.0/d3.js"
+        integrity="sha256-BANs9QteeZKuqwQcdddFZlWLLyUCIke5Nn80f8B5G3g=" crossorigin="anonymous"></script>
+    <link rel="stylesheet" href="./style.css">
     <title>Document</title>
 </head>
+
 <body>
-    <div id="content"></div>
+    <div id="content">
+        <h1 id="title">Monthly Global Land-Surface Temperature</h1>
+        <h2 id="description">1753 - 2015: base temperature 8.66℃</h2>
+    </div>
 </body>
+<script>
+    fetch('https://raw.githubusercontent.com/freeCodeCamp/ProjectReferenceData/master/global-temperature.json')
+        .then(res => res.json())
+        .then(data => {
+            const baseTemp = data.baseTemperature
+            const dataset = data.monthlyVariance.map(o => Object.assign({}, o, { minTemp: Math.round(o.variance * 10) / 10, maxTemp: Math.round((o.variance + baseTemp) * 10) / 10 }))
+            const width = 1300;
+            // const width = 1600;
+            const height = 540;
+            const padding = 70;
+            const hbar = (height - 2 * padding) / (12 - 1);
+            const wbar = (width - 2 * padding) / (d3.max(dataset, o => o.year) - d3.min(dataset, o => o.year) - 1)
+            const xScale = d3.scaleLinear().domain([d3.min(dataset, o => o.year), d3.max(dataset, o => o.year)]).range([0, width - 2 * padding]);
+            const yScale = d3.scaleLinear().domain([d3.min(dataset, o => o.month), d3.max(dataset, o => o.month)]).range([0, height - 2 * padding]);
+
+            const config = [
+                { temp: 2.8, color: 'rgb(49, 54, 149)' },
+                { temp: 3.9, color: 'rgb(69, 117, 180)' },
+                { temp: 5.0, color: 'rgb(116, 173, 209)' },
+                { temp: 6.1, color: 'rgb(171, 217, 233)' },
+                { temp: 7.2, color: 'rgb(224, 243, 248)' },
+                { temp: 8.3, color: 'rgb(255, 255, 191)' },
+                { temp: 9.5, color: 'rgb(254, 224, 144)' },
+                { temp: 10.6, color: 'rgb(253, 174, 97)' },
+                { temp: 11.7, color: 'rgb(244, 109, 67)' },
+                { temp: 12.8, color: 'rgb(215, 48, 39)' },
+                { temp: undefined, color: 'rgb(165, 0, 38)' },
+            ]
+
+            //SVG
+            const svg = d3.select('#content')
+                .append('svg')
+                .attr('width', width)
+                .attr('height', height);
+            //Bar
+            svg.selectAll('rect')
+                .data(dataset)
+                .enter()
+                .append('rect')
+                .attr('class', 'cell')
+                .attr('data-month', o => o.month)
+                .attr('data-year', o => o.year)
+                .attr('data-temp', o => o.maxTemp)
+                .attr('width', wbar)
+                .attr('height', hbar)
+                .attr('x', o => xScale(o.year) + padding)
+                .attr('y', o => yScale(o.month) + 10)
+                .style('fill', o => config.find(oo => o.maxTemp < oo.temp) ? config.find(oo => o.maxTemp < oo.temp).color : 'rgb(165, 0, 38)')
+            //Axis X
+            const xAxis = d3.axisBottom(xScale);
+            svg.append('g')
+                .attr('id', 'x-axis')
+                .attr('transform', `translate(${padding},${hbar * 12 + 10})`)
+                .call(xAxis);
+            //Axis Y
+            const yAxis = d3.axisLeft(yScale)
+                .tickFormat(o => d3.timeFormat("%B")(new Date(0, o - 1)))
+            svg.append('g')
+                .attr('id', 'y-axis')
+                .attr('transform', `translate(${padding},${10 + hbar * 0.5})`)
+                .call(yAxis);
+
+            //Legend
+            const legend = svg.append('g')
+                .attr('transform', `translate(${padding},${height - padding})`)
+            //-Rect
+            legend.selectAll('rect')
+                .data(config)
+                .enter()
+                .append('rect')
+                .attr('width', '30')
+                .attr('height', '20')
+                .attr('x', (o, i) => 30 * i)
+                .style('fill', o => o.color)
+                .style('stroke', 'black')
+            //-Text
+            legend.selectAll('text')
+                .data(config)
+                .enter()
+                .append('text')
+                .attr('x', (o, i) => 30 * (i + 1))
+                .attr('y', 35)
+                .attr('text-anchor', 'middle')
+                .style('font-size', '10pt')
+                .text(o => o.temp)
+        })
+</script>
+
 </html>
